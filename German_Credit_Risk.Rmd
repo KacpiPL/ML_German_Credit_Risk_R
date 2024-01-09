@@ -1,0 +1,96 @@
+---
+title: "ML_German_Credit_Risk"
+author: "Bryzik Michał, Gruca Kacper"
+date: "2024-01-09"
+  html_document:
+    toc: yes
+    toc_depth: 3
+    toc_float: TRUE
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+The main goal of this paper is to apply ML methods, especially Decision Trees to theclassify clients.
+.
+.
+.
+
+Dopisać cos
+
+```{R, message=FALSE}
+library(tidyverse)
+library(DT)
+```
+
+## Data_preparation
+
+```{R, message=FALSE}
+datatable(df, options = list(
+  searching = FALSE,
+  pageLength = 5,
+  lengthMenu = c(5, 10, 15, 20)
+))
+```
+
+### Chr cleaning
+
+As we can observe all chr columns have additiona quotes '', let's delete them.
+
+```{R}
+df <- df %>%
+  mutate_if(is.character, function(x) gsub("'", "", x))
+```
+
+### Missing values
+
+Dataframe does not have any missing values, as we can see below
+
+```{R}
+## Getting the number of missing values in each column
+num_missing <-  colSums(is.na(df))
+
+# Excluding columns that contains 0 missing values
+num_missing <-  num_missing[num_missing > 0]
+num_missing
+
+```
+
+### Handle Categorical variables
+
+```{R}
+# Select all columns with chr data type
+chr_columns <- names(df[, sapply(df, is.character)])
+chr_columns
+```
+
+
+```{R, message=FALSE}
+
+datatable(df[, chr_columns], options = list(
+  searching = FALSE,
+  pageLength = 5,
+  lengthMenu = c(5, 10, 15, 20)
+))
+```
+
+
+
+```{R}
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
