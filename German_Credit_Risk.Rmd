@@ -2,9 +2,10 @@
 title: "ML_German_Credit_Risk"
 author: "Bryzik Michał, Gruca Kacper"
 date: "2024-01-09"
+output: 
   html_document:
     toc: yes
-    toc_depth: 3
+    toc_depth: 4
     toc_float: TRUE
 ---
 
@@ -14,33 +15,43 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Introduction
 
-The main goal of this paper is to apply ML methods, especially Decision Trees to theclassify clients.
-.
-.
-.
+The main goal of this paper is to apply ML methods, especially Decision Trees to the classify clients.
 
 Dopisać cos
 
-```{R, message=FALSE}
+```{r, message=FALSE}
 library(tidyverse)
 library(DT)
+library(dplyr)
 ```
 
 ## Data_preparation
 
-```{R, message=FALSE}
+Read csv
+```{r}
+df <- read.csv("data/input/c2.csv")
+```
+
+Below we can observe raw dataframe and its format of the columns:
+
+```{r, echo=FALSE}
 datatable(df, options = list(
   searching = FALSE,
   pageLength = 5,
-  lengthMenu = c(5, 10, 15, 20)
-))
+  lengthMenu = c(5, 10, 15, 20),
+  scrollX = TRUE
+), width = "100%")  # Adjust the width as needed
 ```
 
-### Chr cleaning
+```{r}
+str(df)
+```
+
+### Delete quotations
 
 As we can observe all chr columns have additiona quotes '', let's delete them.
 
-```{R}
+```{r}
 df <- df %>%
   mutate_if(is.character, function(x) gsub("'", "", x))
 ```
@@ -49,7 +60,7 @@ df <- df %>%
 
 Dataframe does not have any missing values, as we can see below
 
-```{R}
+```{r}
 ## Getting the number of missing values in each column
 num_missing <-  colSums(is.na(df))
 
@@ -61,35 +72,102 @@ num_missing
 
 ### Handle Categorical variables
 
-```{R}
-# Select all columns with chr data type
+Select all columns with chr data type - we treat them as categorical
+
+```{r}
 chr_columns <- names(df[, sapply(df, is.character)])
 chr_columns
 ```
 
+Create df with categorical variables, print unique values of each column.
 
-```{R, message=FALSE}
+```{r}
+# Function to print unique values for each column in dataframe
+print_unique_values <- function(df){
+  
+  df_unique <- lapply(df, unique)
+  # Print unique values for each column
+  for (col_name in names(df_unique)) {
+    cat(col_name, ": ", paste(df_unique[[col_name]], collapse = ", "), "\n")
+  }
+}
 
-datatable(df[, chr_columns], options = list(
-  searching = FALSE,
-  pageLength = 5,
-  lengthMenu = c(5, 10, 15, 20)
-))
+```
+
+```{r}
+df_categorical <- df[chr_columns]
+
+print_unique_values(df_categorical)
+       
+```
+
+#### Personal status column
+
+Let's focus on the column "personal_status", here we have 2 information, sex and marital status
+
+We should separate them into 2 columns:
+
+* sex (0 - female, 1 - male)
+* marital_status:
+  + single
+  + div/dep/mar
+  + mar/wid
+  + div/sep
+
+Check the size of each group:
+
+```{r}
+personal_status_counts <- table(df$personal_status)
+
+print(personal_status_counts)
+       
+```
+
+Create 2 new columns:
+
+```{r}
+# Extracting sex information
+df <- df %>%
+  mutate(sex = ifelse(grepl("female", personal_status), 0, 1))
+
+# Extracting the rest of the information
+df <- df %>%
+  mutate(marital_status = sub("^[^ ]+ ", "", sub(" $", "", personal_status)))
+
+# Drop the original "personal_status" column
+df <- df %>%
+  select(-personal_status)
 ```
 
 
+Create a list of reamining chr columns which needs to be handled yet
 
-```{R}
+```{r}
+# Copy chr columns and remove personal_status - now we have list with remaining chr columns
+chr_columns_help <- chr_columns
 
+# Remove "personal_status" from list
+chr_columns_help <- setdiff(chr_columns_help, "personal_status")
+
+# Adding marital_status to object_columns_help
+chr_columns_help <- union(chr_columns_help, "marital_status")
+
+print(chr_columns_help)
 ```
 
+#### Ordered categorical variables
 
+In the dataset we can observe a few ordered categorical variables. Let's define and transform them.
 
+```{r}
+# Refresh the df_categorical and show unique values - columns to be handled yet
 
+df_categorical <- df[, chr_columns_help]
+print_unique_values(df_categorical)
+       
+```
 
-
-
-
+Let's define ordered categorical variables:
 
 
 
