@@ -41,6 +41,8 @@ library(DT)
 library(dplyr)
 library(fastDummies)
 library(caret)
+library(ggplot2)
+library(plotfunctions)
 ```
 
 ## Data cleaning
@@ -341,7 +343,7 @@ df.test  <- df[-training_obs,]
 
 ```{r, echo=FALSE}
 # remove unecessary variables
-rm(list = setdiff(ls(), c("df", "df.test", "df.train")))
+rm(list = setdiff(ls(), c("df", "df.test", "df.train", "print_unique_values")))
 
 # write df.train and df.test
 write.csv(df.test, "./data/output/df.test.csv", row.names = FALSE)
@@ -350,12 +352,49 @@ write.csv(df.train, "./data/output/df.train.csv", row.names = FALSE)
 
 ## Exploratory Data Analysis
 
-```{r}
+Divide variables
 
+```{r, max.height='150px'}
+# define numeric variables
+numeric_variables <- c("age",
+                       "checking_status",
+                       "credit_amount",
+                       "duration",
+                       "employment",
+                       "existing_credits",
+                       "installment_commitment",
+                       "num_dependents",
+                       "residence_since")
+
+# define feat variables
+feat_variables <- c()
+for (i in 1:10){
+  if (i < 10){
+    var <- paste("feat0", i, sep="")
+  } else {
+    var <- paste("feat", i, sep="")
+  }
+  feat_variables <- append(feat_variables, var)
+}
+
+# define ordered_categorical
+ordered_categorical = c("checking_status", "employment", "job", "savings_status")
+
+# define boolean variables
+boolean_variables <- setdiff(colnames(df.train), c("id", numeric_variables, feat_variables, ordered_categorical))
+
+# check if the division was made properly
+print_unique_values(df[,boolean_variables])
 ```
 
-```{r}
+Make histograms of numeric variables
 
+```{r}
+par(mfrow=c(3, 4))
+
+for (var in numeric_variables) {
+    hist(df[[var]], main=paste("Histogram of", var), xlab=var)
+}
 ```
 
 ```{r}
