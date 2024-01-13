@@ -1,5 +1,5 @@
 ---
-title: "ML_German_Credit_Risk"
+title: "ML - German_Credit_Risk"
 author: "Bryzik Michał, Gruca Kacper"
 date: "2024-01-09"
 output: 
@@ -120,7 +120,6 @@ Check the size of each group:
 personal_status_counts <- table(df$personal_status)
 
 print(personal_status_counts)
-       
 ```
 
 Create 2 new columns:
@@ -139,6 +138,13 @@ df <- df %>%
   select(-personal_status)
 ```
 
+```{r}
+sex_counts <- table(df$sex)
+marital_status_counts <- table(df$marital_status)
+
+print(sex_counts)
+print(marital_status_counts)
+```
 
 Create a list of reamining chr columns which needs to be handled yet
 
@@ -169,6 +175,118 @@ print_unique_values(df_categorical)
 
 Let's define ordered categorical variables:
 
+```{r}
+ordered_categorical = c("checking_status", "employment", "job", "savings_status")
+head(df[, ordered_categorical])
+```
+
+Define values for each category
+
+```{r}
+checking_status_mapping <- c(
+  "<0" = 1, 
+  "0<=X<200" = 2, 
+  ">=200" = 3, 
+  "no checking" = 4)
+
+employment_mapping <- c(
+  "unemployed" = 1, 
+  "<1" = 2, 
+  "1<=X<4" = 3, 
+  "4<=X<7"= 4, 
+  ">=7" = 5)
+
+job_mapping <- c(
+    "unemp/unskilled non res" = 1,
+    "unskilled resident" = 2,
+    "skilled" = 3,
+    "high qualif/self emp/mgmt" = 4
+)
+
+savings_status_mapping <- c(
+    "no known savings" = 1,
+    "<100" = 2,
+    "100<=X<500" = 3,
+    "500<=X<1000" = 4,
+    ">=1000" = 5
+)
+
+# Define the mapping function
+recode_variable <- function(variable, mapping) {
+  variable <- factor(variable, levels = names(mapping))
+  return(as.numeric(variable))
+}
+
+df$checking_status <- recode_variable(df$checking_status, checking_status_mapping)
+df$employment <- recode_variable(df$employment, employment_mapping)
+df$job_mapping <- recode_variable(df$job, job_mapping)
+df$savings_status <- recode_variable(df$savings_status, savings_status_mapping)
+```
+
+Update the chr_columns_help - delete ordered categorical columns and print
+
+```{r}
+# Remove ordered_categorical variables names from list
+chr_columns_help <- setdiff(chr_columns_help, ordered_categorical)
+```
+
+#### Other categorical variables
+
+```{r}
+# Print remaining categorical variables and its unique values
+df_categorical <- df[, chr_columns_help]
+print_unique_values(df_categorical)
+```
+
+#### Boolean variables
+
+Let’s define boolean variables:
+
+```{r}
+boolean_variables = c("class", "foreign_worker", "own_telephone")
+head(df[, boolean_variables])
+```
+
+```{r}
+df$class <- ifelse(grepl("good", df$class), 1, 0)
+df$foreign_worker <- ifelse(grepl("yes", df$foreign_worker), 1, 0)
+df$own_telephone <- ifelse(grepl("yes", df$own_telephone), 1, 0)
+```
+
+```{r}
+# Remove boolean_variables variables names from list
+chr_columns_help <- setdiff(chr_columns_help, boolean_variables)
+```
+
+```{r}
+# Print remaining categorical variables and its unique values
+df_categorical <- df[, chr_columns_help]
+print_unique_values(df_categorical)
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
 
 
 
