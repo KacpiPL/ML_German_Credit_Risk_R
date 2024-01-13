@@ -13,6 +13,21 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+
+```{r, include=FALSE}
+options(width = 60)
+local({
+  hook_output <- knitr::knit_hooks$get('output')
+  knitr::knit_hooks$set(output = function(x, options) {
+    if (!is.null(options$max.height)) options$attr.output <- c(
+      options$attr.output,
+      sprintf('style="max-height: %s;"', options$max.height)
+    )
+    hook_output(x, options)
+  })
+})
+```
+
 ## Introduction
 
 The main goal of this paper is to apply ML methods, especially Decision Trees to the classify clients.
@@ -23,9 +38,10 @@ Dopisać cos
 library(tidyverse)
 library(DT)
 library(dplyr)
+library(fastDummies)
 ```
 
-## Data_preparation
+## Data cleaning
 
 Read csv
 ```{r}
@@ -43,7 +59,7 @@ datatable(df, options = list(
 ), width = "100%")  # Adjust the width as needed
 ```
 
-```{r}
+```{r, max.height='150px'}
 str(df)
 ```
 
@@ -219,7 +235,7 @@ recode_variable <- function(variable, mapping) {
 
 df$checking_status <- recode_variable(df$checking_status, checking_status_mapping)
 df$employment <- recode_variable(df$employment, employment_mapping)
-df$job_mapping <- recode_variable(df$job, job_mapping)
+df$job <- recode_variable(df$job, job_mapping)
 df$savings_status <- recode_variable(df$savings_status, savings_status_mapping)
 ```
 
@@ -228,14 +244,6 @@ Update the chr_columns_help - delete ordered categorical columns and print
 ```{r}
 # Remove ordered_categorical variables names from list
 chr_columns_help <- setdiff(chr_columns_help, ordered_categorical)
-```
-
-#### Other categorical variables
-
-```{r}
-# Print remaining categorical variables and its unique values
-df_categorical <- df[, chr_columns_help]
-print_unique_values(df_categorical)
 ```
 
 #### Boolean variables
@@ -258,6 +266,10 @@ df$own_telephone <- ifelse(grepl("yes", df$own_telephone), 1, 0)
 chr_columns_help <- setdiff(chr_columns_help, boolean_variables)
 ```
 
+#### One-hot encoding
+
+For the remaining columns we apply one-hot encodig
+
 ```{r}
 # Print remaining categorical variables and its unique values
 df_categorical <- df[, chr_columns_help]
@@ -265,16 +277,54 @@ print_unique_values(df_categorical)
 ```
 
 ```{r}
-
+df <- dummy_cols(
+  df, 
+  select_columns = chr_columns_help, 
+  remove_first_dummy = TRUE, 
+  remove_selected_columns = TRUE)
 ```
+
+### Summary of data cleaning
+
+We performed data cleaning in a few steps:
+
+* Delete quotations (clean chr variables)
+* Handle categorical variables divided into:
+  + Personal status column - divde column into 2 columns
+  + Ordered categorical variables
+  + Boolean variables
+  + Categorical variable (one-hot encoding)
+  
+After this transformations we obtained dataframe with 51 variables.
+
+As we can see below, after the data transformation there are no missing values, so the data transformation process was successful.
 
 ```{r}
+## Getting the number of missing values in each column
+num_missing <-  colSums(is.na(df))
 
+# Excluding columns that contains 0 missing values
+num_missing <-  num_missing[num_missing > 0]
+num_missing
 ```
 
-```{r}
+Below we can see the new dataframe and its columns along with their value types
 
+```{r, echo=FALSE}
+datatable(df, options = list(
+  searching = FALSE,
+  pageLength = 5,
+  lengthMenu = c(5, 10, 15, 20),
+  scrollX = TRUE
+), width = "100%")  # Adjust the width as needed
 ```
+
+
+```{r, max.height='150px'}
+str(df)
+```
+
+## Exploratory Data Analysis
 
 ```{r}
 
