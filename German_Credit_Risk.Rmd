@@ -30,15 +30,17 @@ local({
 
 ## Introduction
 
+Classification problem
+
 The main goal of this paper is to apply ML methods, especially Decision Trees to the classify clients.
 
-Dopisać cos
 
 ```{r, message=FALSE}
 library(tidyverse)
 library(DT)
 library(dplyr)
 library(fastDummies)
+library(caret)
 ```
 
 ## Data cleaning
@@ -322,6 +324,28 @@ datatable(df, options = list(
 
 ```{r, max.height='150px'}
 str(df)
+```
+
+### Splitting the dataset
+
+Before performing Exploratory Data Analysis we should divide our dataset into train and test, we do it as below:
+
+```{r}
+set.seed(123456789)
+training_obs <- createDataPartition(df$id, 
+                                    p = 0.7, 
+                                    list = FALSE) 
+df.train <- df[training_obs,]
+df.test  <- df[-training_obs,]
+```
+
+```{r, echo=FALSE}
+# remove unecessary variables
+rm(list = setdiff(ls(), c("df", "df.test", "df.train")))
+
+# write df.train and df.test
+write.csv(df.test, "./data/output/df.test.csv", row.names = FALSE)
+write.csv(df.train, "./data/output/df.train.csv", row.names = FALSE)
 ```
 
 ## Exploratory Data Analysis
