@@ -200,6 +200,23 @@ ordered_categorical = c("checking_status", "employment", "job", "savings_status"
 head(df[, ordered_categorical])
 ```
 
+We found out that the group unemp/unskilled non res has just 40 observations, 29 with good class and 11 with bad. The distribution of this class is very similar to the distribution of unskilled resident.
+
+unemp/unskilled non res:
+29/40 = 0.725 - share of good credits in this group
+
+unskilled resident:
+288/411 = 0.700
+
+Becaouse of that we decide to join these two groups.
+
+```{r, message=FALSE}
+df %>%
+group_by(job, class) %>%
+summarise(count = n())
+```
+
+
 Define values for each category
 
 ```{r}
@@ -219,9 +236,9 @@ employment_mapping <- c(
 
 job_mapping <- c(
     "unemp/unskilled non res" = 1,
-    "unskilled resident" = 2,
-    "skilled" = 3,
-    "high qualif/self emp/mgmt" = 4
+    "unskilled resident" = 1,
+    "skilled" = 2,
+    "high qualif/self emp/mgmt" = 3
 )
 
 savings_status_mapping <- c(
@@ -350,6 +367,7 @@ rm(list = setdiff(ls(), c("df", "df.test", "df.train", "print_unique_values")))
 # write df.train and df.test
 write.csv(df.test, "./data/output/df.test.csv", row.names = FALSE)
 write.csv(df.train, "./data/output/df.train.csv", row.names = FALSE)
+write.csv(df, "./data/output/df.csv")
 ```
 
 ## Exploratory Data Analysis
