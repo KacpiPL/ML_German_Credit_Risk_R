@@ -208,7 +208,7 @@ unemp/unskilled non res:
 unskilled resident:
 288/411 = 0.700
 
-Becaouse of that we decide to join these two groups.
+Because of that we decide to join these two groups.
 
 ```{r, message=FALSE}
 df %>%
