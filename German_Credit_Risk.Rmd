@@ -367,7 +367,7 @@ rm(list = setdiff(ls(), c("df", "df.test", "df.train", "print_unique_values")))
 # write df.train and df.test
 write.csv(df.test, "./data/output/df.test.csv", row.names = FALSE)
 write.csv(df.train, "./data/output/df.train.csv", row.names = FALSE)
-write.csv(df, "./data/output/df.csv")
+write.csv(df, "./data/output/df.csv", row.names = FALSE)
 ```
 
 ## Exploratory Data Analysis
