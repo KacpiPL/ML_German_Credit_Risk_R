@@ -15,7 +15,7 @@ importance <- varImp(model, scale=FALSE)
 print(importance)
 plot(importance)
 
-# drugie podejście
+# drugie podejście - to które finalnie wybraliśmy
 control2 <- rfeControl(functions=rfFuncs, method="cv", number=10)
 
 results <- rfe(df.train[,c(1, 2, seq(4,length(df.train), 1))], df.train[,3], sizes=c(1:49), rfeControl=control2)
