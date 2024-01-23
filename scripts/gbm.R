@@ -7,6 +7,7 @@ library(doParallel)
 library(pROC)
 library(ggplot2)
 library(gbm)
+library(caret)
 
 cores=delightgbmcores=detectCores()
 registerDoParallel(cores=cores)
@@ -22,8 +23,10 @@ df <- df[,-1]
 df.train <- df.train[,-1]
 df.test <- df.test[,-1]
 
-
-# gbm wants target variable to be 0 and 1
+# Make factor
+df$class <- factor(df$class, levels = c(0, 1), labels = c("bad", "good"))
+df.train$class <- factor(df.train$class, levels = c(0, 1), labels = c("bad", "good"))
+df.test$class <- factor(df.test$class, levels = c(0, 1), labels = c("bad", "good"))
 
 rfe_columns <- read.csv("./data/output/rfe_columns.csv")
 rfe_columns <- c("class", rfe_columns$x)
@@ -31,10 +34,29 @@ rfe_columns <- c("class", rfe_columns$x)
 df.train <- df.train[, rfe_columns]
 df.test <- df.test[, rfe_columns]
 
-set.seed(123456789)
+# define model formula - all variables apart from class
+model_formula <- NA
+model_formula <- "class_1 ~"
 
+for (i in 2:length(colnames(df.train))){
+  if(i == 2){
+    model_formula <- paste(model_formula, colnames(df.train)[i])
+  } else {
+    model_formula <- paste(model_formula, " + ", colnames(df.train)[i])
+  }
+}
+
+model_formula <- as.formula(model_formula)
+
+# gbm wants target variable to be 0 and 1
+# Define new variable - class_1 with 0 and 1
+df.train$class_1 <- (df.train$class == "good") * 1
+df.test$class_1 <- (df.test$class == "good") * 1
+
+##### Simple GBM #####
+set.seed(123456789)
 gbm.1 <- 
-  gbm(class ~ .,
+  gbm(model_formula,
       data = df.train,
       distribution = "bernoulli",
       # total number of trees
@@ -58,38 +80,62 @@ df.pred.test.gbm <- predict(gbm.1,
                              type = "response",
                              n.trees = 500)
 
-# Convert probabilities to class predictions (0 or 1) based on a 0.5 threshold
-df.pred.train.class <- ifelse(df.pred.train.gbm > 0.5, 1, 0)
-df.pred.train.class <- factor(df.pred.train.class, levels = c(0, 1))
+source("./scripts/getAccuracyAndGini2.R")
 
-df.train$class <- factor(df.train$class, levels = c(0, 1))
+# Training set
+getAccuracyAndGini2(data = data.frame(class = df.train$class,
+                                      pred = df.pred.train.gbm),
+                    predicted_probs = "pred",
+                    target_variable = "class",
+                    target_levels = c("good", "bad"),
+                    predicted_class = "good")
+
+# Test set
+getAccuracyAndGini2(data = data.frame(class = df.test$class,
+                                      pred = df.pred.test.gbm),
+                    predicted_probs = "pred",
+                    target_variable = "class",
+                    target_levels = c("good", "bad"),
+                    predicted_class = "good")
+
+ROC.train.gbm <- pROC::roc(df.train$class, 
+                           df.pred.train.gbm)
+
+ROC.test.gbm  <- pROC::roc(df.test$class, 
+                           df.pred.test.gbm)
+
+cat("AUC for train = ", pROC::auc(ROC.train.gbm), 
+    ", Gini for train = ", 2 * pROC::auc(ROC.train.gbm) - 1, "\n", sep = "")
+
+cat("AUC for test = ", pROC::auc(ROC.test.gbm), 
+    ", Gini for test = ", 2 * pROC::auc(ROC.test.gbm) - 1, "\n", sep = "")
 
 
-df.pred.test.class <- ifelse(df.pred.test.gbm > 0.5, 1, 0)
-df.pred.test.class <- factor(df.pred.test.class, levels = c(0, 1))
+list(
+  ROC.train.gbm = ROC.train.gbm,
+  ROC.test.gbm  = ROC.test.gbm
+) %>%
+  pROC::ggroc(alpha = 0.5, linetype = 1, size = 1) + 
+  geom_segment(aes(x = 1, xend = 0, y = 0, yend = 1), 
+               color = "grey", 
+               linetype = "dashed") +
+  labs(subtitle = paste0("Gini TRAIN: ",
+                         "gbm = ", 
+                         round(100 * (2 * auc(ROC.train.gbm) - 1), 1), "%, ",
+                         "Gini TEST: ",
+                         "gbm = ", 
+                         round(100 * (2 * auc(ROC.test.gbm) - 1), 1), "%, "
+  )) +
+  theme_bw() + coord_fixed() +
+  scale_color_brewer(palette = "Paired")
 
-df.test$class <- factor(df.test$class, levels = c(0, 1))
+##### Hyperparameter tuning #####
 
-# Confusion Matrix for Training data
-confusionMatrix(df.pred.train.class, df.train$class)
 
-# Confusion Matrix for Test data
-confusionMatrix(df.pred.test.class, df.test$class)
 
-# Gini coefficient (using AUC)
-# For Training data
-auc.train <- roc(df.train$class, df.pred.train.gbm)$auc
-gini.train <- 2 * auc.train - 1
 
-# For Test data
-auc.test <- roc(df.test$class, df.pred.test.gbm)$auc
-gini.test <- 2 * auc.test - 1
 
-# Print Gini coefficients
-print(paste("Gini Coefficient for Training Data: ", gini.train))
-print(paste("Gini Coefficient for Test Data: ", gini.test))
 
-##### grid search #####
 
 
 
