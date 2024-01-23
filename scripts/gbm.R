@@ -35,18 +35,23 @@ df.train <- df.train[, rfe_columns]
 df.test <- df.test[, rfe_columns]
 
 # define model formula - all variables apart from class
-model_formula <- NA
-model_formula <- "class_1 ~"
-
-for (i in 2:length(colnames(df.train))){
-  if(i == 2){
-    model_formula <- paste(model_formula, colnames(df.train)[i])
-  } else {
-    model_formula <- paste(model_formula, " + ", colnames(df.train)[i])
+create_model_formula <- function(df, explained_variable){
+  
+  model_formula <- paste(explained_variable, "~")
+  
+  for (i in 2:length(colnames(df))){
+    if(i == 2){
+      model_formula <- paste(model_formula, colnames(df)[i])
+    } else {
+      model_formula <- paste(model_formula, " + ", colnames(df)[i])
+    }
   }
+  
+  return(as.formula(model_formula))
 }
 
-model_formula <- as.formula(model_formula)
+model_formula01 <- create_model_formula(df.train, "class_1")
+model_formula <- create_model_formula(df.train, "class")
 
 # gbm wants target variable to be 0 and 1
 # Define new variable - class_1 with 0 and 1
@@ -56,7 +61,7 @@ df.test$class_1 <- (df.test$class == "good") * 1
 ##### Simple GBM #####
 set.seed(123456789)
 gbm.1 <- 
-  gbm(model_formula,
+  gbm(model_formula01,
       data = df.train,
       distribution = "bernoulli",
       # total number of trees
@@ -131,12 +136,106 @@ list(
 
 ##### Hyperparameter tuning #####
 
+parameters_gbm <- expand.grid(interaction.depth = c(1, 2, 4),
+                              n.trees = c(100, 300, 500),
+                              shrinkage = c(0.01, 0.1), 
+                              n.minobsinnode = c(150, 250, 400))
+
+ctrl_cv3 <- trainControl(method = "cv", 
+                         number = 8,
+                         classProbs = TRUE,
+                         summaryFunction = twoClassSummary)
+
+
+model_formula
+
+set.seed(123456789)
+gbm.2  <- train(model_formula,
+                       data = df.train,
+                       distribution = "bernoulli",
+                       method = "gbm",
+                       tuneGrid = parameters_gbm,
+                       trControl = ctrl_cv3,
+                       verbose = FALSE)
+
+gbm.2
+
+res <- gbm.2$results
+# n.trees = 500
+# interaction.depth = 4
+# shrinkage = 0.1
+# n.minobsinnode = 50
+
+# n.trees = 500
+# interaction.depth = 4
+# shrinkage = 0.1
+# n.minobsinnode = 150
+
+
+saveRDS(object = gbm.2,
+        file   = "./data/output/gbm/gbm.2.rds")
+
+# Predict train
+df.pred.train.gbm2 <- predict(gbm.2,
+                             df.train, 
+                             type = "prob",
+                             n.trees = 500)
+# Predict test
+df.pred.test.gbm2 <- predict(gbm.2,
+                            df.test, 
+                            type = "prob",
+                            n.trees = 500)
+
+
+# Training set
+getAccuracyAndGini2(data = data.frame(class = df.train$class,
+                                      pred = df.pred.train.gbm2[, "good"]),
+                    predicted_probs = "pred",
+                    target_variable = "class",
+                    target_levels = c("good", "bad"),
+                    predicted_class = "good")
+
+
+# Test set
+getAccuracyAndGini2(data = data.frame(class = df.test$class,
+                                      pred = df.pred.test.gbm2[, "good"]),
+                    predicted_probs = "pred",
+                    target_variable = "class",
+                    target_levels = c("good", "bad"),
+                    predicted_class = "good")
 
 
 
+ROC.train.gbm2 <- pROC::roc(df.train$class, 
+                           df.pred.train.gbm2[, "good"])
+
+ROC.test.gbm2  <- pROC::roc(df.test$class, 
+                           df.pred.test.gbm2[, "good"])
+
+cat("AUC for train = ", pROC::auc(ROC.train.gbm2), 
+    ", Gini for train = ", 2 * pROC::auc(ROC.train.gbm2) - 1, "\n", sep = "")
+
+cat("AUC for test = ", pROC::auc(ROC.test.gbm2), 
+    ", Gini for test = ", 2 * pROC::auc(ROC.test.gbm2) - 1, "\n", sep = "")
 
 
-
+list(
+  ROC.train.gbm2 = ROC.train.gbm2,
+  ROC.test.gbm2  = ROC.test.gbm2
+) %>%
+  pROC::ggroc(alpha = 0.5, linetype = 1, size = 1) + 
+  geom_segment(aes(x = 1, xend = 0, y = 0, yend = 1), 
+               color = "grey", 
+               linetype = "dashed") +
+  labs(subtitle = paste0("Gini TRAIN: ",
+                         "gbm = ", 
+                         round(100 * (2 * auc(ROC.train.gbm2) - 1), 1), "%, ",
+                         "Gini TEST: ",
+                         "gbm = ", 
+                         round(100 * (2 * auc(ROC.test.gbm2) - 1), 1), "%, "
+  )) +
+  theme_bw() + coord_fixed() +
+  scale_color_brewer(palette = "Paired")
 
 
 
