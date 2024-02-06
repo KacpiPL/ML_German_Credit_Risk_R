@@ -1,5 +1,7 @@
 library(dplyr)
 
+# This is not full data preparation, just some code snippets - full is in .rmd file
+
 rm(list=ls())
 
 df <- read.csv("data/input/c2.csv")
