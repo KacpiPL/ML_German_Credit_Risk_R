@@ -8,7 +8,7 @@ df.train <- read.csv("./data/output/df.train.csv")
 df.test <- read.csv("./data/output/df.test.csv")
 
 # rfe requires factor as target variable
-df.train[,3] <- as.factor(df.train[,3])
+df.train[,1] <- as.factor(df.train[,1])
 
 # Feature selection using Recursive Feature Elimination (RFE)
 
@@ -28,10 +28,10 @@ seedsList[[length(seedsList) + 1]] <- sample.int(1000, 1) # Add one more seed fo
 control <- rfeControl(functions=rfFuncs, method="cv", number=10, seeds = seedsList)
 
 # # Perform feature selection with rfe
-# Target variable "class" is on the third position, so we set the parameters accordingly
+# Target variable "class" is on the first position, so we set the parameters accordingly
 set.seed(123456789)
-results <- rfe(df.train[,c(1, 2, seq(4,length(df.train), 1))],      # predictor variables 
-               df.train[,3],                                        # target variable for prediction
+results <- rfe(df.train[, seq(2, length(df.train), 1)],             # predictor variables 
+               df.train[, 1],                                       # target variable for prediction
                sizes=c(1:49),                                       # the subset sizes to evaluate
                rfeControl=control)
 
@@ -39,5 +39,4 @@ predictors(results)
 plot(results, type=c("g", "o"))
 
 rfe_columns <- predictors(results)
-
 write.csv(rfe_columns, "./data/output/rfe_columns.csv")
