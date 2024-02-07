@@ -1,0 +1,292 @@
+---
+title: "ML - German_Credit_Risk"
+author: "Bryzik Michał, Gruca Kacper"
+date: "2024-01-09"
+output:
+  html_document:
+    toc: true
+    toc_depth: 4
+    toc_float: true
+  html_notebook:
+    toc: true
+    toc_depth: '4'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include=FALSE}
+options(width = 60)
+local({
+  hook_output <- knitr::knit_hooks$get('output')
+  knitr::knit_hooks$set(output = function(x, options) {
+    if (!is.null(options$max.height)) options$attr.output <- c(
+      options$attr.output,
+      sprintf('style="max-height: %s;"', options$max.height)
+    )
+    hook_output(x, options)
+  })
+})
+```
+
+## Random Forest - one by one
+
+Let's start with cleaning the environment and loading the data.
+
+```{r}
+rm(list=ls())
+
+df <- read.csv("./data/output/df.csv")
+df.train <- read.csv("./data/output/df.train.csv")
+df.test <- read.csv("./data/output/df.test.csv")
+
+df.train$class <- factor(df.train$class, levels = c(0, 1), labels = c("bad", "good"))
+df.test$class <- factor(df.test$class, levels = c(0, 1), labels = c("bad", "good"))
+```
+
+Prepare df as before.
+
+```{r}
+rfe_columns <- read.csv("./data/output/rfe_columns.csv")
+rfe_columns <- c("class", rfe_columns$x)
+
+df.train <- df.train[, rfe_columns]
+df.test <- df.test[, rfe_columns]
+```
+
+Estimate first - basic model with all variables and default parameters
+
+```{r, message=FALSE}
+library(randomForest)
+library(caret)
+library(pROC)
+library(dplyr)
+```
+
+
+```{r}
+set.seed(123456789)
+rf <- randomForest(class ~ ., 
+                   data = df.train)
+
+saveRDS(rf, file = "./data/output/rf/rf.RDS")
+```
+
+```{r}
+print(rf)
+```
+
+Estimated out-of-bag-error: 13.57%
+
+```{r}
+plot(rf)
+```
+
+The plot above helps determine the appropriate number of trees.
+
+The dark solid line presents the total OOB error, the red line presents the prediction error for "good" response, while the green line for "bad" response.
+
+As the number of trees is higher, the OOB error is smaller, and converges to approx. 120 trees.
+
+Hence, let us try to limit number of trees and estimate the model on bootstrap samples from the full data set.
+
+We also increase the number of predictors used from 5 to 10.
+
+```{r}
+set.seed(123456789)
+rf2 <- 
+  randomForest(class ~ .,
+               data = df.train,
+               ntree = 120,
+               sampsize = nrow(df.train),
+               mtry = 10,
+               # minimum number of obs in the terminal nodes
+               nodesize = 100,
+               # we also generate predictors importance measures,
+               importance = TRUE)
+
+saveRDS(rf2, file = "./data/output/rf/rf2.RDS")
+print(rf2)
+```
+
+Let us try to optimize the mtry parameter using the cross-validation process.
+
+We consider 35 predictors in the model formula. Hence, let us try mtry between 2 and 31.
+
+```{r, max.height='150px'}
+parameters_rf <- expand.grid(mtry = 2:31)
+ctrl_oob <- trainControl(method = "oob", classProbs = TRUE)
+
+set.seed(123456789)
+
+rf3 <-
+  train(class ~ .,
+        data = df.train,
+        method = "rf",
+        ntree = 120,
+        nodesize = 100,
+        tuneGrid = parameters_rf,
+        trControl = ctrl_oob,
+        importance = TRUE)
+
+rf3
+saveRDS(rf3, file = "./data/output/rf/rf3.RDS") 
+```
+
+```{r}
+plot(rf3$results$mtry,
+     rf3$results$Accuracy, type = "b")
+```
+
+```{r}
+plot(rf3$results$mtry,
+     rf3$results$Kappa, type = "b")
+```
+
+```{r}
+modelLookup("ranger")
+```
+
+Let's apply grid search and try to optimize mtry and min.node.size parameters
+
+```{r}
+parameters_ranger <- 
+  expand.grid(mtry = 4:15,
+              # split rule
+              splitrule = "gini",
+              # minimum size of the terminal node
+              min.node.size = c(50, 100, 150))
+
+ctrl_cv5 <- trainControl(method = "cv", 
+                         number =    5,
+                         classProbs = T)
+
+set.seed(123456789)
+rf3a <- 
+  train(class ~ ., 
+        data = df.train, 
+        method = "ranger", 
+        num.trees = 120, # default = 500
+        # numbers of processor cores to use in computations
+        num.threads = 3,
+        # impurity measure
+        importance = "impurity",
+        # parameters
+        tuneGrid = parameters_ranger, 
+        trControl = ctrl_cv5)
+
+saveRDS(rf3a, file = "./data/output/rf/rf3a.RDS") 
+```
+
+```{r, max.height='150px'}
+rf3a
+```
+
+```{r}
+plot(rf3a)
+```
+
+In this case the omptimal value for mtry is 6.
+
+Let's compare all of the models.
+
+```{r, message=FALSE}
+pred.train.rf <- predict(rf, 
+                         df.train, 
+                         type = "prob")[, "good"]
+ROC.train.rf  <- roc(as.numeric(df.train$class == "good"), 
+                     pred.train.rf)
+
+
+pred.test.rf  <- predict(rf, 
+                         df.test, 
+                         type = "prob")[, "good"]
+ROC.test.rf   <- roc(as.numeric(df.test$class == "good"), 
+                     pred.test.rf)
+
+
+pred.train.rf2 <- predict(rf2, 
+                          df.train, 
+                          type = "prob")[, "good"]
+ROC.train.rf2  <- roc(as.numeric(df.train$class == "good"), 
+                      pred.train.rf2)
+
+
+pred.test.rf2  <- predict(rf2, 
+                          df.test, 
+                          type = "prob")[, "good"]
+ROC.test.rf2   <- roc(as.numeric(df.test$class == "good"), 
+                      pred.test.rf2)
+
+
+pred.train.rf3 <- predict(rf3, 
+                          df.train, 
+                          type = "prob")[, "good"]
+ROC.train.rf3  <- roc(as.numeric(df.train$class == "good"), 
+                      pred.train.rf3)
+
+
+pred.test.rf3  <- predict(rf3, 
+                          df.test, 
+                          type = "prob")[, "good"]
+ROC.test.rf3   <- roc(as.numeric(df.test$class == "good"), 
+                      pred.test.rf3)
+
+
+pred.train.rf3a <- predict(rf3a, 
+                           df.train, 
+                           type = "prob")[, "good"]
+ROC.train.rf3a  <- roc(as.numeric(df.train$class == "good"), 
+                       pred.train.rf3a)
+
+
+pred.test.rf3a  <- predict(rf3a, 
+                           df.test, 
+                           type = "prob")[, "good"]
+ROC.test.rf3a   <- roc(as.numeric(df.test$class == "good"), 
+                       pred.test.rf3a)
+```
+
+```{r}
+list(
+  ROC.train.rf   = ROC.train.rf,
+  ROC.test.rf    = ROC.test.rf,
+  ROC.train.rf2  = ROC.train.rf2,
+  ROC.test.rf2   = ROC.test.rf2,
+  ROC.train.rf3  = ROC.train.rf3,
+  ROC.test.rf3   = ROC.test.rf3,
+  ROC.train.rf3a = ROC.train.rf3a,
+  ROC.test.rf3a  = ROC.test.rf3a
+) %>%
+  pROC::ggroc(alpha = 0.5, linetype = 1, size = 1) + 
+  geom_segment(aes(x = 1, xend = 0, y = 0, yend = 1), 
+               color = "grey", 
+               linetype = "dashed") +
+  labs(title = paste0("Gini TEST: ",
+                      "rf = ", 
+                      round(100 * (2 * auc(ROC.test.rf) - 1), 1), "%, ",
+                      "rf2 = ", 
+                      round(100 * (2 * auc(ROC.test.rf2) - 1), 1), "%, ",
+                      "rf3 = ", 
+                      round(100 * (2 * auc(ROC.test.rf3) - 1), 1), "%, ",
+                      "rf3a = ", 
+                      round(100 * (2 * auc(ROC.test.rf3a) - 1), 1), "% "),
+       subtitle =  paste0("Gini TRAIN: ",
+                          "rf = ", 
+                          round(100 * (2 * auc(ROC.train.rf) - 1), 1), "%, ",
+                          "rf2 = ", 
+                          round(100 * (2 * auc(ROC.train.rf2) - 1), 1), "%, ",
+                          "rf3 = ", 
+                          round(100 * (2 * auc(ROC.train.rf3) - 1), 1), "%, ",
+                          "rf3a = ", 
+                          round(100 * (2 * auc(ROC.train.rf3a) - 1), 1), "% ")) +
+  theme_bw() + coord_fixed() +
+  scale_color_brewer(palette = "Paired")
+```
+
+Finally the random forest model with grid search (rf3a) with mtry = 6, splitrule = gini and min.node.size = 50 turned out to be the best.
+
+
+
+
