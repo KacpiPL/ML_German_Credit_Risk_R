@@ -19,10 +19,6 @@ df <- read.csv("./data/output/df.csv")
 df.train <- read.csv("./data/output/df.train.csv")
 df.test <- read.csv("./data/output/df.test.csv")
 
-df <- df[,-1]
-df.train <- df.train[,-1]
-df.test <- df.test[,-1]
-
 # Make factor
 df$class <- factor(df$class, levels = c(0, 1), labels = c("bad", "good"))
 df.train$class <- factor(df.train$class, levels = c(0, 1), labels = c("bad", "good"))
@@ -142,7 +138,7 @@ parameters_gbm <- expand.grid(interaction.depth = c(1, 2, 4),
                               n.minobsinnode = c(150, 250, 400))
 
 ctrl_cv3 <- trainControl(method = "cv", 
-                         number = 8,
+                         number = 10,
                          classProbs = TRUE,
                          summaryFunction = twoClassSummary)
 
@@ -188,7 +184,7 @@ df.pred.test.gbm2 <- predict(gbm.2,
 
 
 # Training set
-getAccuracyAndGini2(data = data.frame(class = df.train$class,
+accuracy_gini_train <- getAccuracyAndGini2(data = data.frame(class = df.train$class,
                                       pred = df.pred.train.gbm2[, "good"]),
                     predicted_probs = "pred",
                     target_variable = "class",
@@ -197,14 +193,15 @@ getAccuracyAndGini2(data = data.frame(class = df.train$class,
 
 
 # Test set
-getAccuracyAndGini2(data = data.frame(class = df.test$class,
+accuracy_gini_test <- getAccuracyAndGini2(data = data.frame(class = df.test$class,
                                       pred = df.pred.test.gbm2[, "good"]),
                     predicted_probs = "pred",
                     target_variable = "class",
                     target_levels = c("good", "bad"),
                     predicted_class = "good")
 
-
+write.csv(accuracy_gini_test, "./data/accuracy_gini_test.csv")
+write.csv(accuracy_gini_train, "./data/accuracy_gini_train.csv")
 
 ROC.train.gbm2 <- pROC::roc(df.train$class, 
                            df.pred.train.gbm2[, "good"])

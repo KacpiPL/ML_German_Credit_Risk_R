@@ -21,10 +21,6 @@ df <- read.csv("./data/output/df.csv")
 df.train <- read.csv("./data/output/df.train.csv")
 df.test <- read.csv("./data/output/df.test.csv")
 
-df <- df[,-1]
-df.train <- df.train[,-1]
-df.test <- df.test[,-1]
-
 df.train$class <- factor(df.train$class, levels = c(0, 1), labels = c("bad", "good"))
 df.test$class <- factor(df.test$class, levels = c(0, 1), labels = c("bad", "good"))
 
@@ -114,7 +110,7 @@ plot(rf3$results$mtry,
      rf3$results$Kappa, type = "b") 
   
   
-# mtry = 8
+# mtry = 10
 modelLookup("ranger")
 
 parameters_ranger <- 
@@ -122,7 +118,7 @@ parameters_ranger <-
               # split rule
               splitrule = "gini",
               # minimum size of the terminal node
-              min.node.size = c(100, 250, 500))
+              min.node.size = c(50, 100, 150))
 
 ctrl_cv5 <- trainControl(method = "cv", 
                          number =    5,
@@ -241,7 +237,7 @@ list(
   theme_bw() + coord_fixed() +
   scale_color_brewer(palette = "Paired")
 
-
+getacc
 
 
 

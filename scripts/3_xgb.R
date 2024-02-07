@@ -6,48 +6,35 @@ library(plyr)
 library(doParallel)
 library(pROC)
 library(ggplot2)
+library(caret)
 
 cores=detectCores()
 registerDoParallel(cores=cores)
 
-# Let us examine frequencies of the target variable values:
-# good - 1
-# bad - 0
-
-# table(df$class)
-# table(df$class)/length(df$class)
-# 
-# # Let us also examine frequencies of the target variable inside the training and the testing set.
-# table(df.train$class)/length(df.train$class)
-# table(df.test$class)/length(df.test$class)
-
 # Start with xgb
-colnames(df)
 rm(list=ls())
 
 df <- read.csv("./data/output/df.csv")
 df.train <- read.csv("./data/output/df.train.csv")
 df.test <- read.csv("./data/output/df.test.csv")
 
-df <- df[,-1]
-df.train <- df.train[,-1]
-df.test <- df.test[,-1]
-
+# Xgb requires target variable as factor - let's change it
 df$class <- factor(df$class, levels = c(0, 1), labels = c("bad", "good"))
 df.train$class <- factor(df.train$class, levels = c(0, 1), labels = c("bad", "good"))
 df.test$class <- factor(df.test$class, levels = c(0, 1), labels = c("bad", "good"))
 
-table(df.train$class)
-table(df.test$class)
-
+# Read columns chosen by rfe
 rfe_columns <- read.csv("./data/output/rfe_columns.csv")
+
+# Add "class" to the list of columns chosen for analysis
 rfe_columns <- c("class", rfe_columns$x)
 
+# Modify dfs to have columns chosen by rfe
 df.train <- df.train[, rfe_columns]
 df.test <- df.test[, rfe_columns]
 
 # colsample_bytree - # rule of thumb (number of predictors)
-sqrt(33)/33
+sqrt(35)/35
 
 # min_child_weight - 0.5 ... 0.1% of number of observations
 0.005 * 2000  # 10
@@ -78,10 +65,10 @@ xgb_model.1
 
 xgb_model.1 %>% saveRDS("./data/output/xgb/xgb_model.1.rds")
 
-# best for nrunds = 70
+# best for nrounds = 40
 
 # Tune max_depth and min_child_weight
-xgb_grid <- expand.grid(nrounds = 70,
+xgb_grid <- expand.grid(nrounds = 40,
                         max_depth = c(5, 15, 1),
                         eta = c(0.25),
                         gamma = 1,
@@ -98,15 +85,15 @@ xgb_model.2
 
 xgb_model.2 %>% saveRDS("./data/output/xgb/xgb_model.2.rds")
 
-# The best for max_depth = 15, min_child_weight = 14
+# The best for max_depth = 5, min_child_weight = 12
 
 # Tune colsample_bytree
 xgb_grid <- expand.grid(nrounds = 70,
-                        max_depth = 15,
+                        max_depth = 5,
                         eta = c(0.25),
                         gamma = 1,
                         colsample_bytree = seq(0.05, 0.7, 0.01),
-                        min_child_weight = 14,
+                        min_child_weight = 12,
                         subsample = 0.8)
 
 set.seed(12345678)
@@ -118,14 +105,15 @@ xgb_model.3 <- train(class ~ .,
 xgb_model.3
 
 xgb_model.3 %>% saveRDS("./data/output/xgb/xgb_model.3.rds")
-# The best for colsample_bytree = 0.3
+
+# The best for colsample_bytree = 0.65
 
 # Tune subsample
 xgb_grid <- expand.grid(nrounds = 70,
                         max_depth = 15,
                         eta = c(0.25),
                         gamma = 1,
-                        colsample_bytree = 0.3,
+                        colsample_bytree = 0.65,
                         min_child_weight = 14,
                         subsample = seq(0.6, 0.9, 0.05))
 
