@@ -1,4 +1,11 @@
-##### function to tune models
+##### set_seed_grid #####
+set.seed(123)
+set_seed_grid <- function(grid, seed) {
+  set.seed(seed)
+  grid
+}
+
+##### function to tune models ##### 
 tune_two_stages <- function(models, model_name) {
   # Extract parameters based on the model_name
   model_params <- models[[model_name]]
@@ -89,7 +96,7 @@ summary_xgb <- function(results, tuned_params_xgb){
   
   results_df <- data.frame()
   
-  for (i in 1:3) {
+  for (i in 1:540) {
     tuned_params <- results[i, tuned_params_xgb]
     
     rounded_params <- round(as.numeric(tuned_params), 2)
@@ -129,8 +136,10 @@ summary_xgb <- function(results, tuned_params_xgb){
     auc_test <- auc(ROC.test)
     gini_test <- round(100 * (2 * auc(ROC.test) - 1), 1)
     
-    # sgenerate and save roc plot
+    # generate roc plot
     roc_plot <- plot_roc(ROC.train, ROC.test)
+    
+    # save roc plot
     path <- paste("./plots/xgb_", i, ".png", sep="")
     ggsave(path, roc_plot, width = 10, height = 8, dpi = 300)
     
@@ -204,6 +213,13 @@ summary_random_forest <- function(results, tuned_params_random_forest){
     auc_test <- auc(ROC.test)
     gini_test <- round(100 * (2 * auc(ROC.test) - 1), 1)
     
+    # generate roc plot
+    roc_plot <- plot_roc(ROC.train, ROC.test)
+    
+    # save roc plot
+    path <- paste("./plots/rf_", i, ".png", sep="")
+    ggsave(path, roc_plot, width = 10, height = 8, dpi = 300)
+    
     iteration_df <- data.frame(
       iteration = i,
       trees = rounded_params[1],
@@ -266,6 +282,13 @@ summary_decision_tree <- function(results, tuned_params_decision_tree){
     
     auc_test <- auc(ROC.test)
     gini_test <- round(100 * (2 * auc(ROC.test) - 1), 1)
+    
+    # generate roc plot
+    roc_plot <- plot_roc(ROC.train, ROC.test)
+    
+    # save roc plot
+    path <- paste("./plots/dt_", i, ".png", sep="")
+    ggsave(path, roc_plot, width = 10, height = 8, dpi = 300)
     
     iteration_df <- data.frame(
       iteration = i,
