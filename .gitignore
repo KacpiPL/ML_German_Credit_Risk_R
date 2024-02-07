@@ -9,3 +9,5 @@ data/output/rf
 data/output/gbm
 plots/
 presentation/
+*.html
+data/
