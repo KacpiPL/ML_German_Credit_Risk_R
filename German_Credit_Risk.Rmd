@@ -554,7 +554,7 @@ library(doParallel)
 df.train <- read.csv("./data/output/df.train.csv")
 df.test <- read.csv("./data/output/df.test.csv")
 
-# rfe requires factor as target variable, so we modify class (3rd column) - only on df.train dataframe as of now
+# rfe requires factor as target variable, so we modify class (1st column) - only on df.train dataframe as of now
 df.train[, 1] <- as.factor(df.train[,1])
 ```
 
