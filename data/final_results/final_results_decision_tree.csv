@@ -1,0 +1,4 @@
+"","iteration","cost_complexity","tree_depth","min_n","auc_train","gini_train","auc_test","gini_test","models_spec","model_name"
+"1",1,0,6,25,0.861357351054586,72.3,0.788854184001331,57.8,"cost_complexity = 0, tree_depth = 6, min_n = 25","decision_tree"
+"2",2,0,9,25,0.885576851332584,77.1,0.805956297443644,61.2,"cost_complexity = 0, tree_depth = 9, min_n = 25","decision_tree"
+"3",3,0,9,50,0.830286590399811,66.1,0.765697205545386,53.1,"cost_complexity = 0, tree_depth = 9, min_n = 50","decision_tree"

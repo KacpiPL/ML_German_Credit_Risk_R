@@ -1,0 +1,4 @@
+"","iteration","trees","min_n","tree_depth","loss_reduction","stop_iter","learn_rate","auc_train","gini_train","auc_test","gini_test","models_spec","model_name"
+"1",1,500,25,9,1,10,0.02,0.943156080689148,88.6,0.877840218128752,75.6,"trees = 500, min_n = 25, tree_depth = 9, loss_reduction = 1, stop_iter = 10, learn_rate = 0.02","xgboost"
+"2",2,500,25,9,1,20,0.02,0.943156080689148,88.6,0.877840218128752,75.6,"trees = 500, min_n = 25, tree_depth = 9, loss_reduction = 1, stop_iter = 20, learn_rate = 0.02","xgboost"
+"3",3,500,25,9,1,30,0.02,0.943156080689148,88.6,0.877840218128752,75.6,"trees = 500, min_n = 25, tree_depth = 9, loss_reduction = 1, stop_iter = 30, learn_rate = 0.02","xgboost"
