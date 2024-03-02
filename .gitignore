@@ -2,12 +2,7 @@
 .Rhistory
 .RData
 .Ruserdata
-German_Credit_Risk.html
 .DS_Store
-data/output/xgb
-data/output/rf
-data/output/gbm
-plots/
 presentation/
-*.html
-data/
+*.xlsx
+html/
