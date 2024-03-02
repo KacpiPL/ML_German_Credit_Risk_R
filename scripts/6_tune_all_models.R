@@ -38,9 +38,6 @@ rfe_columns <- c("class", rfe_columns$x)
 df.train <- df.train[, rfe_columns]
 df.test <- df.test[, rfe_columns]
 
-df_train <- df.train
-df_test <- df.test
-
 # define parameters of models
 models <- list(
   xgboost = list(
@@ -54,7 +51,7 @@ models <- list(
                         stop_iter = tune(),
                         min_n = tune()),
     
-    rec_spec = recipe(class ~ ., df_train),
+    rec_spec = recipe(class ~ ., df.train),
     
     grid_1 = set_seed_grid(grid_latin_hypercube(learn_rate(), size = 10), 123),
     
@@ -71,7 +68,7 @@ models <- list(
     model_1 = rand_forest(mode = "classification", engine = "ranger", mtry = 5, trees = tune()),
     model_2_args = list(min_n = tune()),
     
-    rec_spec = recipe(class ~ ., df_train),
+    rec_spec = recipe(class ~ ., df.train),
     
     grid_1 = set_seed_grid(grid_latin_hypercube(trees(), size = 50), 123),
     
@@ -84,7 +81,7 @@ models <- list(
     model_1 = decision_tree(mode = "classification", engine = "rpart", cost_complexity = tune()),
     model_2_args = list(tree_depth = tune(), min_n = tune()),
     
-    rec_spec = recipe(class ~ ., df_train),
+    rec_spec = recipe(class ~ ., df.train),
     
     grid_1 = set_seed_grid(grid_latin_hypercube(cost_complexity(), size = 10), 123),
     grid_2 = set_seed_grid(as_tibble(expand.grid(
@@ -119,7 +116,6 @@ results <- result_list_random_forest$result
 
 final_results_random_forest <- summary_random_forest(results, tuned_params_random_forest)
 write.csv(final_results_random_forest, "./data/output/rf/final_results_random_forest.csv")
-
 
 ##### decision_tree ##### 
 # decision_tree tune
