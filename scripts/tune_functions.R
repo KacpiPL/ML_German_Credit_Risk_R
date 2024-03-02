@@ -18,7 +18,7 @@ tune_two_stages <- function(models, model_name) {
   
   set.seed(123)
   # ilość cv
-  cv_folds <- vfold_cv(df_train, v = 10)
+  cv_folds <- vfold_cv(df.train, v = 10)
   
   tune_stage_1 <- tune_grid(
     wflw_model_1,
@@ -91,12 +91,15 @@ plot_roc <- function(ROC.train, ROC.test){
   return(roc_plot)
 }
 
+
+##### summary xgb #####
 # function to summarize xgb results
+
 summary_xgb <- function(results, tuned_params_xgb){
   
   results_df <- data.frame()
   
-  for (i in 1:540) {
+  for (i in 1:3) {
     tuned_params <- results[i, tuned_params_xgb]
     
     rounded_params <- round(as.numeric(tuned_params), 2)
@@ -110,27 +113,27 @@ summary_xgb <- function(results, tuned_params_xgb){
                            stop_iter = rounded_params[5],
                            learn_rate = rounded_params[6])
     
-    rec_spec <- recipe(class ~ ., df_train)
+    rec_spec <- recipe(class ~ ., df.train)
     
     wflw_model <- workflow() %>%
       add_model(xgb_model) %>%
       add_recipe(rec_spec)
     
-    trained_model <- wflw_model %>% fit(data = df_train)
+    trained_model <- wflw_model %>% fit(data = df.train)
     
     # Generate predictions - train
-    predictions_train <- predict(trained_model, new_data = df_train, type = "prob")
+    predictions_train <- predict(trained_model, new_data = df.train, type = "prob")
     
-    ROC.train <- pROC::roc(df_train$class,
+    ROC.train <- pROC::roc(df.train$class,
                            predictions_train$.pred_good)
     
     auc_train <- auc(ROC.train) 
     gini_train <- round(100 * (2 * auc(ROC.train) - 1), 1)
     
     # Generate predictions - test
-    predictions_test <- predict(trained_model, new_data = df_test, type = "prob")
+    predictions_test <- predict(trained_model, new_data = df.test, type = "prob")
     
-    ROC.test <- pROC::roc(df_test$class,
+    ROC.test <- pROC::roc(df.test$class,
                           predictions_test$.pred_good)
     
     auc_test <- auc(ROC.test)
@@ -169,7 +172,9 @@ summary_xgb <- function(results, tuned_params_xgb){
 }
 
 
-##### summary random_forest ##### 
+##### summary random_forest #####
+# functio to summarize random_forest results
+
 summary_random_forest <- function(results, tuned_params_random_forest){
   
   results_df <- data.frame()
@@ -187,27 +192,27 @@ summary_random_forest <- function(results, tuned_params_random_forest){
       min_n = rounded_params[2]
     )
     
-    rec_spec <- recipe(class ~ ., df_train)
+    rec_spec <- recipe(class ~ ., df.train)
     
     wflw_model <- workflow() %>%
       add_model(random_forest_model) %>%
       add_recipe(rec_spec)
     
-    trained_model <- wflw_model %>% fit(data = df_train)
+    trained_model <- wflw_model %>% fit(data = df.train)
     
     # Generate predictions - train
-    predictions_train <- predict(trained_model, new_data = df_train, type = "prob")
+    predictions_train <- predict(trained_model, new_data = df.train, type = "prob")
     
-    ROC.train <- pROC::roc(df_train$class,
+    ROC.train <- pROC::roc(df.train$class,
                            predictions_train$.pred_good)
     
     auc_train <- auc(ROC.train) 
     gini_train <- round(100 * (2 * auc(ROC.train) - 1), 1)
     
     # Generate predictions - test
-    predictions_test <- predict(trained_model, new_data = df_test, type = "prob")
+    predictions_test <- predict(trained_model, new_data = df.test, type = "prob")
     
-    ROC.test <- pROC::roc(df_test$class,
+    ROC.test <- pROC::roc(df.test$class,
                           predictions_test$.pred_good)
     
     auc_test <- auc(ROC.test)
@@ -242,7 +247,9 @@ summary_random_forest <- function(results, tuned_params_random_forest){
 }
 
 
-##### summary decision_tree ##### 
+##### summary decision_tree #####
+# functio to summarize decision_tree results
+
 summary_decision_tree <- function(results, tuned_params_decision_tree){
   
   results_df <- data.frame()
@@ -257,27 +264,27 @@ summary_decision_tree <- function(results, tuned_params_decision_tree){
                                         tree_depth = rounded_params[2],
                                         min_n = rounded_params[3])
     
-    rec_spec <- recipe(class ~ ., df_train)
+    rec_spec <- recipe(class ~ ., df.train)
     
     wflw_model <- workflow() %>%
       add_model(decision_tree_model) %>%
       add_recipe(rec_spec)
     
-    trained_model <- wflw_model %>% fit(data = df_train)
+    trained_model <- wflw_model %>% fit(data = df.train)
     
     # Generate predictions - train
-    predictions_train <- predict(trained_model, new_data = df_train, type = "prob")
+    predictions_train <- predict(trained_model, new_data = df.train, type = "prob")
     
-    ROC.train <- pROC::roc(df_train$class,
+    ROC.train <- pROC::roc(df.train$class,
                            predictions_train$.pred_good)
     
     auc_train <- auc(ROC.train) 
     gini_train <- round(100 * (2 * auc(ROC.train) - 1), 1)
     
     # Generate predictions - test
-    predictions_test <- predict(trained_model, new_data = df_test, type = "prob")
+    predictions_test <- predict(trained_model, new_data = df.test, type = "prob")
     
-    ROC.test <- pROC::roc(df_test$class,
+    ROC.test <- pROC::roc(df.test$class,
                           predictions_test$.pred_good)
     
     auc_test <- auc(ROC.test)
