@@ -1,0 +1,4 @@
+"","iteration","trees","min_n","auc_train","gini_train","auc_test","gini_test","models_spec","model_name"
+"1",1,953,75,0.955205056429931,91,0.88986034127421,78,"trees = 953, min_n = 75","random_forest"
+"2",2,953,100,0.941613253391933,88.3,0.882499775982795,76.5,"trees = 953, min_n = 100","random_forest"
+"3",3,953,150,0.923691424912929,84.7,0.875612847066654,75.1,"trees = 953, min_n = 150","random_forest"
