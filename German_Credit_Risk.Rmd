@@ -1,7 +1,7 @@
 ---
 title: "ML - German_Credit_Risk"
 author: "Bryzik Michał, Gruca Kacper"
-date: "2024-01-09"
+date: "2024-03-04"
 output: 
   html_document:
     toc: yes
@@ -1686,4 +1686,4 @@ Random forest model tuned in more automated way, presented in the table above al
 
 All results are presented in the attached pdf presentation.
 
-Even though we used a few techniques which might increase the models accuracy and efficiency like handling missing values, transforming columns according to their characteristics, feature selection using Recursive Feature Elimination, cross validation, grid search and so on we believe that the accuracy might be even more increased for instance by using over or undersampling, which we did not apply.
+Even though we used a few techniques which might increase the models accuracy and efficiency like handling missing values, transforming columns according to their characteristics, feature selection using Recursive Feature Elimination, cross validation, grid search and so on we believe that the accuracy might be even more increased for instance by using over or undersampling or some other methods, which we did not apply.
